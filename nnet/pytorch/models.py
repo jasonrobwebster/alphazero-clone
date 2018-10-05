@@ -7,6 +7,84 @@ from torch.autograd import Variable
 
 from .utils import conv_out_shape
 
+
+class AlphaZero(nn.Module):
+    """The alphazero model."""
+    
+    def __init__(self, game, 
+                 block_filters=256, 
+                 block_kernel=3, 
+                 blocks=20, 
+                 policy_filters=2, 
+                 value_filters=1, 
+                 value_hidden=256):
+        super(AlphaZero, self).__init__()
+        board_size = game.get_board_size(nnet=True)
+        board_size = (board_size[2], board_size[0], board_size[1]) # make channels first for pytorch
+        action_size = game.action_size()
+
+        # padding to get the same size output only works for odd kernel sizes
+        if block_kernel % 2 != 1:
+            raise ValueError('block_kernel must be odd, got %d' %block_filters)
+        pad = int(np.floor(block_kernel/2))
+        
+        # the starting conv block
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(board_size[0], block_filters, kernel_size=block_kernel, stride=1, padding=pad),
+            nn.BatchNorm1d(num_features=block_filters),
+            nn.ReLU()
+        )
+
+        # the residual blocks
+        self.blocks = blocks
+        self.res_blocks = nn.ModuleList([ResBlock(block_filters, block_kernel) for i in range(blocks-1)])
+
+        # policy head
+        self.policy_conv = nn.Conv2d(block_filters, policy_filters, kernel_size=1)
+        self.policy_conv_bn = nn.BatchNorm1d(policy_filters)
+        # calculate policy output shape to flatten
+        pol_shape = (policy_filters, board_size[1], board_size[2])
+        self.policy_flat = int(np.prod(pol_shape))
+        # policy layers
+        self.policy_bn = nn.BatchNorm1d(num_features=policy_filters)
+        self.policy = nn.Linear(self.policy_flat, action_size)
+
+        # value head
+        self.value_conv = nn.Conv2d(block_filters, value_filters, kernel_size=1)
+        self.value_conv_bn = nn.BatchNorm1d(value_filters)
+        # calculate value shape to flatten
+        val_shape = (value_filters, board_size[1], board_size[2])
+        self.value_flat = int(np.prod(val_shape))
+        # value layers
+        self.value_hidden = nn.Linear(self.value_flat, value_hidden)
+        self.value = nn.Linear(value_hidden, 1)
+
+    def forward(self, x):
+        x = self.conv_block(x)
+        for i in range(self.blocks):
+            x = self.res_blocks[i](x)
+        
+        # policy head
+        x_pi = self.policy_conv(x)
+        x_pi = self.policy_conv_bn(x_pi)
+        x_pi = x_pi.view(-1, self.policy_flat)
+        x_pi = F.relu(x_pi)
+        x_pi = self.policy(x_pi)
+        x_pi = F.softmax(x_pi)
+
+        # value head
+        x_v = self.value_conv(x)
+        x_v = self.value_conv_bn(x_v)
+        x_v = F.relu(x_v)
+        x_v = x_v.view(-1, self.value_flat)
+        x_v = self.value_hidden(x_v)
+        x_v = F.relu(x_v)
+        x_v = self.value(x_v)
+        x_v = F.tanh(x_v)
+        return x_pi, x_v
+
+# Older models I tried out
+
 class ConvModel(nn.Module):
     def __init__(self, game, filters, kernels, strides, pad, fc, dropout):
         super(ConvModel, self).__init__()
@@ -113,77 +191,3 @@ class ResBlock(nn.Module):
         x = x + inp
         x = F.relu(x)
         return x
-
-class AlphaZero(nn.Module):
-    """The one and only alphazero model."""
-    def __init__(self, game, 
-                 block_filters=256, 
-                 block_kernel=3, 
-                 blocks=19, 
-                 policy_filters=2, 
-                 value_filters=1, 
-                 value_hidden=256):
-        super(AlphaZero, self).__init__()
-        board_size = game.get_board_size(nnet=True)
-        board_size = (board_size[2], board_size[0], board_size[1]) # make channels first
-        action_size = game.action_size()
-
-        # padding to get the same size output only works for odd kernel sizes
-        if block_kernel % 2 != 1:
-            raise ValueError('block_kernel must be odd, got %d' %block_filters)
-        pad = int(np.floor(block_kernel/2))
-        
-        # the starting conv block
-        self.conv_block = nn.Sequential(
-            nn.Conv2d(board_size[0], block_filters, kernel_size=block_kernel, stride=1, padding=pad),
-            nn.BatchNorm1d(num_features=block_filters),
-            nn.ReLU()
-        )
-
-        # the residual blocks
-        self.blocks = blocks
-        self.res_blocks = nn.ModuleList([ResBlock(block_filters, block_kernel) for i in range(blocks)])
-
-        # policy head
-        self.policy_conv = nn.Conv2d(block_filters, policy_filters, kernel_size=1)
-        self.policy_conv_bn = nn.BatchNorm1d(policy_filters)
-        # calculate policy output shape to flatten
-        pol_shape = (policy_filters, board_size[1], board_size[2])
-        self.policy_flat = int(np.prod(pol_shape))
-        # policy layers
-        self.policy_bn = nn.BatchNorm1d(num_features=policy_filters)
-        self.policy = nn.Linear(self.policy_flat, action_size)
-
-        # value head
-        self.value_conv = nn.Conv2d(block_filters, value_filters, kernel_size=1)
-        self.value_conv_bn = nn.BatchNorm1d(value_filters)
-        # calculate value shape to flatten
-        val_shape = (value_filters, board_size[1], board_size[2])
-        self.value_flat = int(np.prod(val_shape))
-        # value layers
-        self.value_hidden = nn.Linear(self.value_flat, value_hidden)
-        self.value = nn.Linear(value_hidden, 1)
-
-    def forward(self, x):
-        x = self.conv_block(x)
-        for i in range(self.blocks):
-            x = self.res_blocks[i](x)
-        
-        # policy head
-        x_pi = self.policy_conv(x)
-        x_pi = self.policy_conv_bn(x_pi)
-        x_pi = x_pi.view(-1, self.policy_flat)
-        x_pi = F.relu(x_pi)
-        x_pi = self.policy(x_pi)
-        x_pi = F.softmax(x_pi)
-
-        # value head
-        x_v = self.value_conv(x)
-        x_v = self.value_conv_bn(x_v)
-        x_v = F.relu(x_v)
-        x_v = x_v.view(-1, self.value_flat)
-        x_v = self.value_hidden(x_v)
-        x_v = F.relu(x_v)
-        x_v = self.value(x_v)
-        x_v = F.tanh(x_v)
-        return x_pi, x_v

@@ -59,7 +59,7 @@ def get_data(mcts, max_moves=150, nnet=True, prop_thresh=30, verbose=0, return_m
             memory.append([state, policy, cur_play])
 
         # perform this action
-        s = game.state()
+        #s = game.state()
         game.move(act)
         mcts.update()
         #print(mcts.get_Qsa(s, act), mcts.get_Nsa(s, act))
