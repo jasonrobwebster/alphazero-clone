@@ -1,15 +1,10 @@
-# pytorch implementation of alphazero
-
-import numpy as np
-
-import torch
+# keras implementation of the AlphaZero model
 
 from .models import AlphaZero
 from .base import BaseNet
 
-__all__ = [
-    'Net'
-]
+from keras.optimizers import Adam
+from keras.callbacks import LearningRateScheduler
 
 class AlphaZeroNet(BaseNet):
     """Pytorch neural network."""
@@ -56,7 +51,7 @@ class AlphaZeroNet(BaseNet):
         self.value_hidden = kwargs.get('value_hidden', 256)
 
     def build(self):
-        self.model = AlphaZero(
+        self.alphazero = AlphaZero(
             self.game, 
             self.block_filters, 
             self.block_kernel, 
@@ -65,12 +60,21 @@ class AlphaZeroNet(BaseNet):
             self.value_filters,
             self.value_hidden
         )
-        model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-        params = sum([np.prod(p.size()) for p in model_parameters])
-        print('Parameters: %d' %params)
-        if self.cuda:
-            self.model = self.model.cuda()
+        self.model = self.alphazero.model
+        
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2, weight_decay=1e-4)
+        params = self.model.count_params()
+        print('Parameters: %d' %params)
+
+        lr = 1e-2
         milestones = [self.step_size*(i+1) for i in range(3)]
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones, 0.1)
+        def scheduler(epoch):
+            for i, milestone in enumerate(milestones):
+                if epoch <= milestone:
+                    return lr * 10**(-i)
+
+        lr_sched = LearningRateScheduler(scheduler)
+        self.callbacks = [lr_sched]
+
+        self.optimizer = Adam(lr=1e-2)
+        self.model.compile(optimizer=self.optimizer, loss=self.loss)

@@ -6,9 +6,9 @@ from keras.layers import (
     Dropout, Dense)
 from keras.models import Model
 
-from ..wrappers import NNetBase
+from ..wrappers import NNetWrap
 
-class Net(NNetBase):
+class Net(NNetWrap):
     """Keras neural network."""
 
     def __init__(self, game, **kwargs):

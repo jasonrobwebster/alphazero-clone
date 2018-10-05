@@ -14,11 +14,10 @@ __all__ = [
 ]
 
 class BaseNet(NNetWrap):
-    """Pytorch base neural network. Helps prevent writing the same code multiple times by providing
+    """Pytorch base neural network. Prevents writing the same code multiple times by providing
     an already working training, prediction, and save/load state methods."""
 
     def __init__(self, **kwargs):
-        """Should be called as a super().__init__(**kwargs) for child class."""
         self.loss = [cross_entropy, nn.MSELoss()]
         self.model = kwargs.get('model', None)
         self.optimizer = kwargs.get('optimizer', None)
@@ -28,9 +27,7 @@ class BaseNet(NNetWrap):
         self.epochs = 0
 
     def build(self):
-        """Should set two attributes: model and optimizer."""
-        self.model = None
-        self.optimizer = None
+        # Should set two attributes: model and optimizer.
         raise NotImplementedError
 
     def train(self, data, epochs=5, batch_size=32, shuffle=True):
@@ -63,13 +60,13 @@ class BaseNet(NNetWrap):
         if self.model is None:
             self.build()
         if self.optimizer is None:
-            raise TypeError('Optimizer has not been set! Check the build method of your net.')
+            raise TypeError('Optimizer has not been set!')
 
         self.model.train()
 
         # get the data
         states, pis, vs = list(zip(*data))
-        states = np.asarray(states).transpose((0, 3, 1, 2)) #transpose to chanels first
+        states = np.asarray(states).transpose((0, 3, 1, 2)) #transpose rgb chanels first
         pis = np.asarray(pis)
         vs = np.asarray(vs)
         if shuffle:
@@ -149,7 +146,7 @@ class BaseNet(NNetWrap):
         self.model.eval()
 
         if len(state.shape) == 3:
-            state = np.transpose(state, (2, 0, 1)) #transpose to channels first
+            state = np.transpose(state, (2, 0, 1)) #transpose rgb channels first
             state = np.expand_dims(state, 0)
         state = torch.from_numpy(state)
         state = state.float()
