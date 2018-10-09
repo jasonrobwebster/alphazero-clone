@@ -75,7 +75,12 @@ class OthelloEngine(object):
 
     def move(self, coord):
         """Updates the board given a move to a coordinate"""
+        if coord == (self.n, self.n):
+            self.player = -self.player
+            return
+        
         legal = self.legal_moves()
+        
         if not coord in legal:
             raise ValueError('Given coord %s is not legal' %str(coord))
 
@@ -126,7 +131,7 @@ class OthelloEngine(object):
         if len(opp_moves) == 0 and len(moves) == 0:
             # the game is over
             # find the difference in scores
-            score = sum(self.board)
+            score = np.sum(self.board)
             if score < 0:
                 # B wins
                 # for consistency with other engines, we set the player to that of the loser
@@ -136,31 +141,33 @@ class OthelloEngine(object):
                 # W wins
                 self.player = 1 # set consistency
                 return '0-1'
+            if score == 0:
+                return '1/2-1/2'
         else:
             # the game continues
             return '*'
 
-    def set_board(self, rep):
-        """Accepts a board representation rep where rep=[board_str, player]"""
-        board_str, player = rep
-        board = np.fromstring(board_str, int)
+    def set_board(self, state):
+        """Accepts a string state representing the board or a numpy array."""
+        board, player = state.split(';')
+        board = board.split(',')
+        board = np.asarray(board, dtype=int)
         n = np.sqrt(len(board))
-
         if int(n) != n:
             raise ValueError('Given board is not square')
-        board = board.reshape((int(n),int(n)))
-        self.n = int(n)
+        n = int(n)
+        board = board.reshape((n,n))
+
         self.board = board
-        self.size = (self.n, self.n)
-        
-        if self.player != 1 and self.player != -1:
-            raise ValueError('Given player is not valid')
-        self.player = player
-        
+        self.n = n
+        self.size = board.shape
+        self.player = int(player)
 
     def board_state(self):
         """Returns a string representation of the board. Not for displaying."""
-        return [self.board.tostring(), self.player]
+        board = ','.join([str(num) for row in self.board for num in row])
+        player = str(self.player)
+        return board + ';' + player
 
     def display(self):
         """Returns a pretty string representation of the board."""
@@ -186,6 +193,7 @@ class OthelloEngine(object):
         rots = [board, np.rot90(board), np.rot90(board, 2), np.rot90(board, 3)]
         flips = list(map(np.fliplr, rots)) + list(map(np.flipud, rots))
         syms = rots + flips
-        syms = list(map(lambda x: [x.tostring(), self.player], syms))
+        syms = list(map(lambda x: ','.join([str(num) for row in self.board for num in row]), syms))
         syms = list(set(syms))
-        return syms
+        states = list(map(lambda x: x + ';' + str(self.player), syms))
+        return states

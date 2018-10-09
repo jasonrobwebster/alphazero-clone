@@ -13,6 +13,8 @@ class Othello(Game):
         self.start_pos = self.engine.board_state()
         move_id = {(i, j): i*n+j for i in range(n) for j in range(n)}
         id_move = {i*n+j: (i, j) for i in range(n) for j in range(n)}
+        move_id[(n, n)] = n**2 # pass move
+        id_move[n**2] = (n, n) # pass move
         self.move_id = move_id
         self.id_move = id_move
 
@@ -51,11 +53,13 @@ class Othello(Game):
             self.engine.move(x)
 
     def action_size(self):
-        return self.n * self.n
+        return self.n * self.n + 1
 
     def legal_moves(self):
         """Returns the legal moves of the current game as a masking array."""
         moves = self.engine.legal_moves()
+        if len(moves) == 0:
+            moves = [(self.n, self.n)]
         moves = list(map(lambda move: self.move_id[move], moves))
 
         out = np.zeros(self.action_size())

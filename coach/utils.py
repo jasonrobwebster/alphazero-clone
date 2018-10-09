@@ -59,11 +59,11 @@ def get_data(mcts, max_moves=150, nnet=True, prop_thresh=30, verbose=0, return_m
             memory.append([state, policy, cur_play])
 
         # perform this action
-        #s = game.state()
+        s = game.state()
         game.move(act)
         mcts.update()
-        #print(mcts.get_Qsa(s, act), mcts.get_Nsa(s, act))
-        #print(game.board())
+        print(mcts.get_Qsa(s, act), mcts.get_Nsa(s, act), game.engine.result(), game.current_player())
+        print(game.board())
 
         # check if the game is over
         v = game.winner()
