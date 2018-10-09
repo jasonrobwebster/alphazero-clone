@@ -16,7 +16,6 @@ class TicTacToeEngine(object):
         self.size = (self.n, self.n)
         self.board = np.zeros(self.size, dtype=int)
         self.player = 1 # 1 for o's, -1 for x's, o always goes first
-        #self.result = 0 # '*' if still playing, '1-0' for o win, '0-1' for x win, '1/2-1/2' for draw
 
     def legal_moves(self):
         """Returns the legal moves."""
