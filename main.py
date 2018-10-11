@@ -6,14 +6,12 @@ from players import NetPlayer
 from coach import NetCoach
 from nnet.keras import AlphaZeroNet
 
-from time import sleep
-
 #game = Chess()
 #game = TicTacToe(3)
 game = Othello(6)
 print(game.board())
 print()
-net = AlphaZeroNet(game, blocks=10, epochs=10, save_path='./models/keras/othello.model')
+net = AlphaZeroNet(game, blocks=10, epochs=10, save_path='./models/keras/othello2.model')
 net.build()
 player = NetPlayer(game, net)
 mcts = MCTSNet(game, player=player, episodes=100, exploration=0.2)
