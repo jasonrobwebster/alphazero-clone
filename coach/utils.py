@@ -43,7 +43,9 @@ def get_data(mcts, max_moves=150, nnet=True, prop_thresh=30, verbose=0, return_m
 
     for move in range(max_moves):
         # get the game state and current player for the nn
-        states = game.get_symmetries(nnet)
+        # TODO: allow for symmetric game
+        # states = game.get_symmetries(nnet)
+        state = game.state(nnet)
         cur_play = game.current_player()
 
         # use mcts to get a policy
@@ -55,15 +57,18 @@ def get_data(mcts, max_moves=150, nnet=True, prop_thresh=30, verbose=0, return_m
         act = np.random.choice(possible_moves, p=policy)
 
         # store the state, policy, and player
-        for state in states:
-            memory.append([state, policy, cur_play])
+        #for state in states:
+        #    memory.append([state, policy, cur_play])
+        memory.append([state, policy, cur_play])
 
         # perform this action
         s = game.state()
         game.move(act)
         mcts.update()
-        print(mcts.get_Qsa(s, act), mcts.get_Nsa(s, act), game.engine.result(), game.current_player())
-        print(game.board())
+        if verbose:
+            print(mcts.get_Qsa(s, act), mcts.get_Nsa(s, act), game.engine.result(), game.current_player())
+            print(game.board())
+        
 
         # check if the game is over
         v = game.winner()

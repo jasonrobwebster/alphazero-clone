@@ -17,8 +17,9 @@ class BaseNet(NNetWrap):
         self.model = kwargs.get('model', None)
         self.optimizer = kwargs.get('optimizer', None)
         self.path = kwargs.get('save_path', './models/keras/keras.model')
-        self.step_size = kwargs.get('step_size', 15)
+        self.step_size = kwargs.get('step_size', 50)
         self.callbacks = None
+        self.epochs = 0
 
     def train(self, data, epochs=5, batch_size=32, shuffle=True):
         """
@@ -61,12 +62,15 @@ class BaseNet(NNetWrap):
 
         history = self.model.fit(
             x=states, y=[pis,vs],
-            epochs=epochs,
+            epochs=self.epochs+epochs,
             batch_size=batch_size,
             verbose=True,
             shuffle=shuffle,
-            callbacks=self.callbacks
+            callbacks=self.callbacks,
+            initial_epoch=self.epochs
         )
+
+        self.epochs += epochs
 
         return history
 
@@ -84,7 +88,7 @@ class BaseNet(NNetWrap):
         if self.model is None:
             self.build()
 
-        self.model.save_weights(self.path)
+        self.model.save_weights(self.path, overwrite=True)
 
     def load_model(self):
         if self.model is None:

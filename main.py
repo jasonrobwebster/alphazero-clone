@@ -20,21 +20,8 @@ mcts = MCTSNet(game, player=player, episodes=100, exploration=0.2)
 #mcts = MCTS(game, episodes=100)
 max_moves = 100
 
-coach = NetCoach(mcts, net, episodes=200, buffer=50, max_moves=max_moves, train_time=8*60*60, prop_thresh=8, train_kw={'epochs': 10})
+coach = NetCoach(mcts, net, episodes=100, buffer=50, max_moves=max_moves, train_time=14*60*60, prop_thresh=12, train_kw={'epochs': 10})
 #coach = NetCoach(game, player, max_moves=10, episodes=1, iterations=2, buffer=2, train_time=300)
 coach.train()
 
-move = 0
 
-def play(t):
-    global move
-    mcts = MCTS(game, player, train_time=t)
-    mcts.train()
-    prop = int(move<10)
-    act = mcts.get_policy(prop=prop)
-    act = np.random.choice(range(game.action_size()), p=act)
-    game.move(act)
-    move+=1
-    print(move)
-    print(game.board())
-    print('')
