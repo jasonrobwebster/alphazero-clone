@@ -188,12 +188,32 @@ class OthelloEngine(object):
         out = out[:-1] # all but the last \n
         return out
 
-    def symmetries(self):
+    def symmetries(self, policy):
+        # boards
         board = self.board
-        rots = [board, np.rot90(board), np.rot90(board, 2), np.rot90(board, 3)]
-        flips = list(map(np.fliplr, rots)) + list(map(np.flipud, rots))
-        syms = rots + flips
-        syms = list(map(lambda x: ','.join([str(num) for row in self.board for num in row]), syms))
-        syms = list(set(syms))
-        states = list(map(lambda x: x + ';' + str(self.player), syms))
-        return states
+        board_rots = [board, np.rot90(board), np.rot90(board, 2), np.rot90(board, 3)]
+        board_flips = list(map(np.fliplr, board_rots)) + list(map(np.flipud, board_rots))
+        boards = board_rots + board_flips
+        boards = list(map(lambda x: ','.join([str(num) for row in self.board for num in row]), syms))
+
+        # policies
+        policy = policy.reshape(self.size)
+        policy_rots = [policy, np.rot90(policy), np.rot90(policy, 2), np.rot90(policy, 3)]
+        policy_flips = list(map(np.fliplr, policy_rots)) + list(map(np.flipud, policy_rots))
+        policies = policy_rots + policy_flips
+
+        # symmetries
+        board_syms = set()
+        policy_syms = set()
+        for i, policy in enumerate(policies):
+            board = boards[i]
+            if board not in board_syms:
+                assert policy not in policy_syms
+                board_syms.add(board)
+                policy_syms.add(policy)
+
+        board_syms = list(board_syms)
+        policy_syms = list(policy_syms)
+
+        states = list(map(lambda x: x + ';' + str(self.player), board_syms))
+        return states, policy_syms
