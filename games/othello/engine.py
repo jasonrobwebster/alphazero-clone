@@ -132,12 +132,12 @@ class OthelloEngine(object):
             # the game is over
             # find the difference in scores
             score = np.sum(self.board)
-            if score < 0:
+            if score > 0:
                 # B wins
                 # for consistency with other engines, we set the player to that of the loser
                 self.player = -1
                 return '1-0'
-            if score > 0:
+            if score < 0:
                 # W wins
                 self.player = 1 # set consistency
                 return '0-1'
