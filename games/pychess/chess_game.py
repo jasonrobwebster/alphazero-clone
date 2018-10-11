@@ -130,6 +130,9 @@ class Chess(Game):
         if result == '1/2-1/2':
             return 0.00001
 
+    def result(self):
+        return self.Board.result(claim_draw=True)
+
     def represent_nn(self, state=None):
         """
         Takes a chess game and returns a matrix that can be used as an input for 

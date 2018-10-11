@@ -31,7 +31,9 @@ class TicTacToe(Game):
     def current_player(self):
         return self.engine.player
 
-    def state(self):
+    def state(self, nnet=False):
+        if nnet:
+            return self.represent_nn()
         return self.engine.board_state()
 
     def canonical_state(self):
@@ -73,6 +75,9 @@ class TicTacToe(Game):
             return -1
         if result == '1/2-1/2':
             return 0.00001
+
+    def result(self):
+        return self.engine.result()
 
     def represent_nn(self, state=None):
         if state is not None:
