@@ -43,7 +43,6 @@ def get_data(mcts, max_moves=150, nnet=True, prop_thresh=30, verbose=0, return_m
 
     for move in range(max_moves):
         # get the game state and current player for the nn
-        # TODO: allow for symmetric game
         # states = game.get_symmetries(nnet)
         state = game.state(nnet)
         cur_play = game.current_player()
@@ -53,13 +52,18 @@ def get_data(mcts, max_moves=150, nnet=True, prop_thresh=30, verbose=0, return_m
         mcts.train()
         policy = mcts.get_policy(prop=prop)
 
+        # handle symmetries
+        states, policies = game.get_symmetries(policy, nnet)
+        for i in range(len(states)):
+            memory.append([states[i], policies[i], cur_play])
+
         # choose an action based off this state
         act = np.random.choice(possible_moves, p=policy)
 
         # store the state, policy, and player
         #for state in states:
         #    memory.append([state, policy, cur_play])
-        memory.append([state, policy, cur_play])
+        #memory.append([state, policy, cur_play])
 
         # perform this action
         s = game.state()
