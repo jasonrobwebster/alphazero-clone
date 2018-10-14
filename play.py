@@ -11,7 +11,7 @@ game = Othello(6)
 print(game.board())
 print()
 
-net = AlphaZeroNet(game, blocks=10, epochs=10, save_path='./models/keras/othello.model')
+net = AlphaZeroNet(game, blocks=10, epochs=10, save_path='./models/keras/othello2.model')
 net.load_model()
 
 player = NetPlayer(game, net)
@@ -34,7 +34,7 @@ def play(t):
     print(game.board())
     print('')"""
 
-    mcts = MCTSNet(game, player, train_time=t, exploration=0.5)
+    mcts = MCTSNet(game, player, episodes=100, exploration=0.5)
     mcts.train()
     prop = int(move<0)
     act = mcts.get_policy(prop=prop)
@@ -49,7 +49,7 @@ def play(t):
     if game.winner() != 0:
         return
 
-    mcts_random = MCTS(game, train_time=t)
+    mcts_random = MCTS(game, episodes=100)
     mcts_random.train()
     prop = int(move<0)
     act = mcts_random.get_policy(prop=prop)
