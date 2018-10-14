@@ -194,26 +194,34 @@ class OthelloEngine(object):
         board_rots = [board, np.rot90(board), np.rot90(board, 2), np.rot90(board, 3)]
         board_flips = list(map(np.fliplr, board_rots)) + list(map(np.flipud, board_rots))
         boards = board_rots + board_flips
-        boards = list(map(lambda x: ','.join([str(num) for row in self.board for num in row]), syms))
+        boards = list(map(lambda x: ','.join([str(num) for row in x for num in row]), boards))
 
         # policies
-        policy = policy.reshape(self.size)
+        pass_token = [policy[-1]]
+        policy = policy[:-1] # excludes the pass token
+        policy_shape = policy.shape
+        policy = policy.reshape(self.size) 
         policy_rots = [policy, np.rot90(policy), np.rot90(policy, 2), np.rot90(policy, 3)]
         policy_flips = list(map(np.fliplr, policy_rots)) + list(map(np.flipud, policy_rots))
         policies = policy_rots + policy_flips
+        policies = list(map(lambda x: x.tolist(), policies))
 
         # symmetries
         board_syms = set()
-        policy_syms = set()
+        policy_syms = []
         for i, policy in enumerate(policies):
             board = boards[i]
             if board not in board_syms:
-                assert policy not in policy_syms
                 board_syms.add(board)
-                policy_syms.add(policy)
+                policy_syms.append(policy)
 
         board_syms = list(board_syms)
         policy_syms = list(policy_syms)
 
         states = list(map(lambda x: x + ';' + str(self.player), board_syms))
-        return states, policy_syms
+
+        policies = list(map(lambda x: np.array(x), policy_syms))
+        policies = list(map(lambda x: x.reshape(policy_shape), policies))
+        policies = list(map(lambda x: np.concatenate([x, pass_token]), policies))
+        
+        return states, policies

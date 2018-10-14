@@ -113,7 +113,7 @@ class Othello(Game):
         return out
 
     def get_symmetries(self, policy, nnet=False):
-        syms = self.engine.symmetries(policy)
+        syms, policies = self.engine.symmetries(policy)
         if nnet:
             syms = list(map(lambda x: self.represent_nn(x), syms))
-        return syms
+        return syms, policies
