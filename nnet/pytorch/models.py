@@ -37,7 +37,7 @@ class AlphaZero(nn.Module):
 
         # the residual blocks
         self.blocks = blocks
-        self.res_blocks = nn.ModuleList([ResBlock(block_filters, block_kernel) for i in range(blocks-1)])
+        self.res_blocks = nn.ModuleList([ResBlock(block_filters, block_kernel) for i in range(blocks)])
 
         # policy head
         self.policy_conv = nn.Conv2d(block_filters, policy_filters, kernel_size=1)
